@@ -1,0 +1,26 @@
+---
+# Caravel / eFabless project metadata
+project:
+  description: "SAHEL-1 — SoC RISC-V dédié drone agricole (NDVI, LoRa, PWM, AES) pour l'Afrique"
+  foundry: "SkyWater"
+  git_url: "https://github.com/tandia00/drone-asic"
+  organization: "SAHEL-1 Consortium"
+  organization_url: "https://example.org"
+  owner: "<owner-name>"
+  process: "SKY130"
+  project_name: "agri_drone_soc"
+  project_id: "0000000000"   # attribué par eFabless lors de la soumission
+  tags:
+    - "Agriculture"
+    - "Drone"
+    - "RISC-V"
+    - "LoRa"
+    - "NDVI"
+    - "AES"
+    - "Africa"
+    - "OpenSource"
+  category: "SoC"
+  top_level_netlist: "verilog/gl/user_project_wrapper.v"
+  user_level_netlist: "verilog/rtl/user_project_wrapper.v"
+  version: "0.1.0"
+  cover_image: "docs/cover.png"

@@ -1,0 +1,11 @@
+build/
+runs/
+submission/
+*.vcd
+*.vvp
+*.elf
+*.bin
+*.hex
+*.o
+.DS_Store
+ext/
