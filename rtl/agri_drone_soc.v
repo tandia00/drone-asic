@@ -119,8 +119,8 @@ module agri_drone_soc (
                        .cs_no(spi1_cs_o), `WBSLV(7));
     // 8 : PWM
     pwm u_pwm (.clk_i(clk_i), .rst_i(rst), .pwm_o(pwm_o), `WBSLV(8));
-    // 9 : GPIO
-    gpio u_gpio (.clk_i(clk_i), .rst_i(rst),
+    // 9 : GPIO (12 broches dans ce SoC)
+    gpio #(.W(12)) u_gpio (.clk_i(clk_i), .rst_i(rst),
                  .gpio_in_i(gpio_in_i), .gpio_out_o(gpio_out_o), .gpio_oeb_o(gpio_oeb_o),
                  `WBSLV(9));
     // 10 : TIMER + WDT

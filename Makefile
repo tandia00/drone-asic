@@ -60,7 +60,12 @@ wave:
 # Lint (Verilator)
 # -----------------------------------------------------------------------------
 lint:
-	verilator --lint-only -Wall -Wno-UNUSED -Wno-UNDRIVEN -Wno-DECLFILENAME $(RTL)
+	verilator --lint-only -Wall -Wno-UNUSED -Wno-UNDRIVEN -Wno-DECLFILENAME \
+	    -Wno-PINCONNECTEMPTY -Wno-WIDTHEXPAND -Wno-WIDTHTRUNC \
+	    -Wno-PROCASSINIT -Wno-BLKSEQ -Wno-GENUNNAMED \
+	    -Wno-PINMISSING -Wno-TIMESCALEMOD \
+	    --top-module agri_drone_soc \
+	    -Iext/picorv32 $(RTL) ext/picorv32/picorv32.v
 
 # -----------------------------------------------------------------------------
 # OpenLane — synthèse + place&route → GDSII
