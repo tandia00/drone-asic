@@ -76,7 +76,8 @@ module ndvi_accel (
                     end
                 end
                 S_RD_R: begin
-                    dma_adr_o <= red_addr + idx;
+                    // SRAM word-addressable : 1 pixel par mot, stride 4 octets
+                    dma_adr_o <= red_addr + (idx << 2);
                     dma_we_o  <= 0;
                     dma_stb_o <= 1; dma_cyc_o <= 1;
                     state <= S_RD_R_W;
@@ -87,7 +88,7 @@ module ndvi_accel (
                     state <= S_RD_N;
                 end
                 S_RD_N: begin
-                    dma_adr_o <= nir_addr + idx;
+                    dma_adr_o <= nir_addr + (idx << 2);
                     dma_stb_o <= 1; dma_cyc_o <= 1;
                     state <= S_RD_N_W;
                 end
@@ -130,7 +131,7 @@ module ndvi_accel (
                     state  <= S_WR;
                 end
                 S_WR: begin
-                    dma_adr_o <= out_addr + idx;
+                    dma_adr_o <= out_addr + (idx << 2);
                     dma_dat_o <= {{24{ndvi_v[7]}}, ndvi_v};
                     dma_we_o  <= 1;
                     dma_stb_o <= 1; dma_cyc_o <= 1;

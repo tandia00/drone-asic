@@ -64,18 +64,46 @@ module agri_drone_soc (
     wire cpu_we, cpu_cyc;
 
     // -------------------------------------------------------------------------
-    // Interconnect
+    // NDVI accelerator DMA master (bas priorité)
     // -------------------------------------------------------------------------
-    localparam N = 12;
+    wire [31:0] ndvi_dma_adr, ndvi_dma_dat_o, ndvi_dma_dat_i;
+    wire        ndvi_dma_we,  ndvi_dma_stb,   ndvi_dma_cyc, ndvi_dma_ack;
+    wire        ndvi_irq;
+    wire [3:0]  ndvi_dma_sel = 4'hF;
+
+    // -------------------------------------------------------------------------
+    // Arbiter 2→1 : CPU (prio haute) + NDVI DMA (prio basse) → Wishbone master
+    // -------------------------------------------------------------------------
+    wire [31:0] arb_adr, arb_dat_o, arb_dat_i;
+    wire [3:0]  arb_sel;
+    wire        arb_we, arb_stb, arb_cyc, arb_ack;
+
+    wb_arbiter u_arb (
+        .clk_i(clk_i), .rst_i(rst),
+        .m0_adr_i(cpu_addr), .m0_dat_i(cpu_wdata), .m0_dat_o(cpu_rdata),
+        .m0_sel_i(cpu_wstrb), .m0_we_i(cpu_we), .m0_stb_i(cpu_valid),
+        .m0_cyc_i(cpu_cyc),  .m0_ack_o(cpu_ready),
+        .m1_adr_i(ndvi_dma_adr), .m1_dat_i(ndvi_dma_dat_o), .m1_dat_o(ndvi_dma_dat_i),
+        .m1_sel_i(ndvi_dma_sel),  .m1_we_i(ndvi_dma_we), .m1_stb_i(ndvi_dma_stb),
+        .m1_cyc_i(ndvi_dma_cyc), .m1_ack_o(ndvi_dma_ack),
+        .s_adr_o(arb_adr), .s_dat_o(arb_dat_o), .s_dat_i(arb_dat_i),
+        .s_sel_o(arb_sel), .s_we_o(arb_we), .s_stb_o(arb_stb),
+        .s_cyc_o(arb_cyc), .s_ack_i(arb_ack)
+    );
+
+    // -------------------------------------------------------------------------
+    // Interconnect (13 slaves : + NDVI CSR)
+    // -------------------------------------------------------------------------
+    localparam N = 13;
     wire [N*32-1:0] s_adr, s_dat_o, s_dat_i;
     wire [N*4-1:0]  s_sel;
     wire [N-1:0]    s_we, s_stb, s_cyc, s_ack;
 
     wb_intercon #(.NSLAVES(N)) u_xbar (
         .clk_i(clk_i), .rst_i(rst),
-        .m_adr_i(cpu_addr), .m_dat_i(cpu_wdata), .m_dat_o(cpu_rdata),
-        .m_sel_i(cpu_wstrb), .m_we_i(cpu_we), .m_stb_i(cpu_valid),
-        .m_cyc_i(cpu_cyc), .m_ack_o(cpu_ready),
+        .m_adr_i(arb_adr), .m_dat_i(arb_dat_o), .m_dat_o(arb_dat_i),
+        .m_sel_i(arb_sel), .m_we_i(arb_we), .m_stb_i(arb_stb),
+        .m_cyc_i(arb_cyc), .m_ack_o(arb_ack),
         .s_adr_o(s_adr), .s_dat_o(s_dat_o), .s_dat_i(s_dat_i),
         .s_sel_o(s_sel), .s_we_o(s_we), .s_stb_o(s_stb), .s_cyc_o(s_cyc),
         .s_ack_i(s_ack)
@@ -128,8 +156,20 @@ module agri_drone_soc (
     // 11 : AES-128
     aes128 u_aes (.clk_i(clk_i), .rst_i(rst), .irq_o(), `WBSLV(11));
 
-    // NDVI accelerator : maître DMA séparé, non câblé sur intercon mono-master en v0.1.
-    // En v0.2 : ajouter arbiter 2-master pour donner accès SRAM au DMA NDVI.
-    // ndvi_accel u_ndvi (...);
+    // 12 : NDVI accelerator (CSR) + DMA master via u_arb
+    ndvi_accel u_ndvi (
+        .clk_i(clk_i), .rst_i(rst),
+        // CSR (slave)
+        `WBSLV(12),
+        // DMA master → arbiter m1
+        .dma_adr_o(ndvi_dma_adr),
+        .dma_dat_o(ndvi_dma_dat_o),
+        .dma_dat_i(ndvi_dma_dat_i),
+        .dma_we_o (ndvi_dma_we),
+        .dma_stb_o(ndvi_dma_stb),
+        .dma_cyc_o(ndvi_dma_cyc),
+        .dma_ack_i(ndvi_dma_ack),
+        .irq_o    (ndvi_irq)
+    );
 
 endmodule

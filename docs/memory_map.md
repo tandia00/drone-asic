@@ -14,7 +14,7 @@
 | 0x3000_7000 |  4 KB  | GPIO             |                                |
 | 0x3000_8000 |  4 KB  | TIMER + WDT      |                                |
 | 0x3000_9000 |  4 KB  | AES-128          |                                |
-| 0x3000_A000 |  4 KB  | NDVI accelerator |                                |
+| 0x3000_A000 |  4 KB  | NDVI accelerator | slave idx 12 (DMA actif sur bus) |
 
 ## Registres NDVI (offset depuis base)
 

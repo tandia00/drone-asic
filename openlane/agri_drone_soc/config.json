@@ -2,6 +2,7 @@
   "DESIGN_NAME": "agri_drone_soc",
   "VERILOG_FILES": [
     "dir::../../rtl/wb_intercon.v",
+    "dir::../../rtl/wb_arbiter.v",
     "dir::../../rtl/uart.v",
     "dir::../../rtl/i2c_master.v",
     "dir::../../rtl/spi_master.v",

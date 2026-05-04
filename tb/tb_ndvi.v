@@ -28,8 +28,8 @@ module tb_ndvi;
         .irq_o(irq)
     );
 
-    // Mémoire simulée 1 KB
-    reg [7:0] mem [0:1023];
+    // Mémoire simulée 1 KB — word addressable (32b/mot)
+    reg [31:0] mem [0:255];
     integer pix_red [0:2];
     integer pix_nir [0:2];
     reg [7:0] out_mem [0:2];
@@ -40,14 +40,15 @@ module tb_ndvi;
         pix_red[2]=200; pix_nir[2]=10;
     end
 
-    // Servir la DMA
+    // Servir la DMA (word-addressable : addr[9:2] = index)
     always @(posedge clk) begin
         dma_ack <= 0;
         if (dma_stb && dma_cyc && !dma_ack) begin
             if (dma_we) begin
-                out_mem[dma_adr - 32'h200] <= dma_dat_o[7:0];
+                // OUT_BASE=0x200 → out_mem idx = (addr - 0x200) >> 2
+                out_mem[(dma_adr - 32'h200) >> 2] <= dma_dat_o[7:0];
             end else begin
-                dma_dat_i <= {24'h0, mem[dma_adr]};
+                dma_dat_i <= mem[dma_adr[9:2]];
             end
             dma_ack <= 1'b1;
         end
@@ -68,9 +69,10 @@ module tb_ndvi;
         $dumpvars(0, tb_ndvi);
         cs_sel=0; cs_we=0; cs_stb=0; cs_cyc=0;
         // initialiser mem : RED en 0x000, NIR en 0x100, OUT en 0x200
+        // mem est word-indexed (1 pixel par mot 32b)
         for (i=0; i<3; i=i+1) begin
-            mem[i]       = pix_red[i];
-            mem[16'h100+i] = pix_nir[i];
+            mem[i]          = pix_red[i];           // idx 0,1,2  (addr 0x000,4,8)
+            mem[8'h40 + i]  = pix_nir[i];           // idx 64,65,66 (addr 0x100,104,108)
         end
         #50 rst = 0;
         wb_w(32'h08, 32'h0000_0000); // RED_ADDR

@@ -16,7 +16,7 @@
 #define GPIO_BASE   0x30007000u
 #define TIMER_BASE  0x30008000u
 #define AES_BASE    0x30009000u
-#define NDVI_BASE   0x3000A000u
+#define NDVI_BASE   0x3000A000u   /* slave idx 12 — DMA actif via wb_arbiter */
 
 /* UART regs */
 #define UART_DATA(B)    REG32((B) + 0x00)

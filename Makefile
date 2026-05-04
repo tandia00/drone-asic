@@ -12,6 +12,7 @@ OPENLANE_DIR  ?= $(HOME)/OpenLane
 
 RTL := \
   $(RTL_DIR)/wb_intercon.v \
+  $(RTL_DIR)/wb_arbiter.v \
   $(RTL_DIR)/uart.v \
   $(RTL_DIR)/i2c_master.v \
   $(RTL_DIR)/spi_master.v \
@@ -32,7 +33,7 @@ GTKWAVE  ?= gtkwave
 # -----------------------------------------------------------------------------
 .PHONY: sim sim-pwm sim-ndvi sim-aes sim-uart wave lint clean harden tarball
 
-sim: sim-pwm sim-ndvi sim-aes sim-uart
+sim: sim-pwm sim-ndvi sim-aes sim-uart sim-arbiter
 
 $(BUILD):
 	mkdir -p $(BUILD)
@@ -60,6 +61,12 @@ sim-aes: | $(BUILD)
 sim-uart: | $(BUILD)
 	$(IVERILOG) -g2012 -o $(BUILD)/tb_uart.vvp $(RTL_DIR)/uart.v $(TB_DIR)/tb_uart.v
 	$(VVP) $(BUILD)/tb_uart.vvp
+
+sim-arbiter: | $(BUILD)
+	$(IVERILOG) -g2012 -o $(BUILD)/tb_arbiter.vvp \
+	    $(RTL_DIR)/wb_arbiter.v $(RTL_DIR)/sram_wrap.v \
+	    $(RTL_DIR)/ndvi_accel.v $(TB_DIR)/tb_arbiter.v
+	$(VVP) $(BUILD)/tb_arbiter.vvp
 
 wave:
 	$(GTKWAVE) $(BUILD)/$(WAVE).vcd &
