@@ -45,8 +45,16 @@ sim-ndvi: | $(BUILD)
 	$(IVERILOG) -g2012 -o $(BUILD)/tb_ndvi.vvp $(RTL_DIR)/ndvi_accel.v $(TB_DIR)/tb_ndvi.v
 	$(VVP) $(BUILD)/tb_ndvi.vvp
 
+SECWORKS_AES := \
+  ext/secworks-aes/src/rtl/aes_core.v \
+  ext/secworks-aes/src/rtl/aes_encipher_block.v \
+  ext/secworks-aes/src/rtl/aes_decipher_block.v \
+  ext/secworks-aes/src/rtl/aes_key_mem.v \
+  ext/secworks-aes/src/rtl/aes_sbox.v \
+  ext/secworks-aes/src/rtl/aes_inv_sbox.v
+
 sim-aes: | $(BUILD)
-	$(IVERILOG) -g2012 -o $(BUILD)/tb_aes.vvp $(RTL_DIR)/aes128.v $(TB_DIR)/tb_aes.v
+	$(IVERILOG) -g2012 -o $(BUILD)/tb_aes.vvp $(RTL_DIR)/aes128.v $(SECWORKS_AES) $(TB_DIR)/tb_aes.v
 	$(VVP) $(BUILD)/tb_aes.vvp
 
 sim-uart: | $(BUILD)
@@ -64,8 +72,10 @@ lint:
 	    -Wno-PINCONNECTEMPTY -Wno-WIDTHEXPAND -Wno-WIDTHTRUNC \
 	    -Wno-PROCASSINIT -Wno-BLKSEQ -Wno-GENUNNAMED \
 	    -Wno-PINMISSING -Wno-TIMESCALEMOD \
+	    -Wno-SYNCASYNCNET -Wno-UNOPTFLAT \
 	    --top-module agri_drone_soc \
-	    -Iext/picorv32 $(RTL) ext/picorv32/picorv32.v
+	    -Iext/picorv32 -Iext/secworks-aes/src/rtl \
+	    $(RTL) ext/picorv32/picorv32.v $(SECWORKS_AES)
 
 # -----------------------------------------------------------------------------
 # OpenLane — synthèse + place&route → GDSII
@@ -103,7 +113,10 @@ clean:
 # -----------------------------------------------------------------------------
 .PHONY: deps
 deps:
+	@mkdir -p ext
 	@if [ ! -d ext/picorv32 ]; then \
-	  mkdir -p ext && cd ext && \
-	  git clone --depth 1 https://github.com/YosysHQ/picorv32.git; \
+	  (cd ext && git clone --depth 1 https://github.com/YosysHQ/picorv32.git); \
+	fi
+	@if [ ! -d ext/secworks-aes ]; then \
+	  (cd ext && git clone --depth 1 https://github.com/secworks/aes.git secworks-aes); \
 	fi

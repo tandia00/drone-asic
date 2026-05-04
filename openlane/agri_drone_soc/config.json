@@ -12,7 +12,13 @@
     "dir::../../rtl/ndvi_accel.v",
     "dir::../../rtl/sram_wrap.v",
     "dir::../../rtl/agri_drone_soc.v",
-    "dir::../../ext/picorv32/picorv32.v"
+    "dir::../../ext/picorv32/picorv32.v",
+    "dir::../../ext/secworks-aes/src/rtl/aes_core.v",
+    "dir::../../ext/secworks-aes/src/rtl/aes_encipher_block.v",
+    "dir::../../ext/secworks-aes/src/rtl/aes_decipher_block.v",
+    "dir::../../ext/secworks-aes/src/rtl/aes_key_mem.v",
+    "dir::../../ext/secworks-aes/src/rtl/aes_sbox.v",
+    "dir::../../ext/secworks-aes/src/rtl/aes_inv_sbox.v"
   ],
   "CLOCK_PORT": "clk_i",
   "CLOCK_NET": "clk_i",
