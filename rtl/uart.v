@@ -65,10 +65,19 @@ module uart (
     reg [7:0]  rx_data_r;
     reg        rx_valid;
 
+    // pulse comb : 1 si le CPU lit DATA → consomme le caractère reçu
+    wire rx_consume = wb_cyc_i && wb_stb_i && !wb_we_i &&
+                      !wb_ack_o && (wb_adr_i[3:0] == 4'h0);
+
     always @(posedge clk_i) begin
         if (rst_i) begin
             rx_busy <= 0; rx_valid <= 0; rx_cnt <= 0; rx_bits <= 0;
+            rx_shift <= 0; rx_data_r <= 0;
         end else begin
+            // Consommation par lecture WB (priorité basse, écrasée si nouvel
+            // octet RX arrive le même cycle ; cas extrêmement rare)
+            if (rx_consume) rx_valid <= 1'b0;
+
             if (!rx_busy) begin
                 if (!rx_s) begin // start bit
                     rx_busy <= 1'b1;
@@ -88,7 +97,6 @@ module uart (
                     end
                 end else rx_cnt <= rx_cnt - 1'b1;
             end
-            // RX is consumed when register is read (handled below)
         end
     end
 
@@ -99,6 +107,7 @@ module uart (
         tx_load  <= 1'b0;
         if (rst_i) begin
             wb_ack_o <= 0; wb_dat_o <= 0; divisor <= 16'd434;
+            tx_data_r <= 0;
         end else begin
             wb_ack_o <= 1'b0;
             if (wb_cyc_i && wb_stb_i && !wb_ack_o) begin
@@ -110,7 +119,7 @@ module uart (
                             tx_load   <= 1'b1;
                         end else begin
                             wb_dat_o  <= {24'h0, rx_data_r};
-                            rx_valid  <= 1'b0;
+                            // rx_valid clear traité dans le bloc RX via rx_consume
                         end
                     end
                     4'h4: wb_dat_o <= {28'h0, !rx_valid, tx_busy /*=full simplifié*/, rx_valid, tx_busy};

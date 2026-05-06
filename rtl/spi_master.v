@@ -30,12 +30,16 @@ module spi_master (
     reg [15:0] divisor = 16'd25; // 50MHz/25 ≈ 2 MHz
     reg        start;
 
+    // Tout dans un seul always (sinon Yosys voit des drivers multiples sur
+    // shift / cs_no / cpol / cpha / start partagés entre FSM et WB).
     always @(posedge clk_i) begin
         start <= 1'b0;
         if (rst_i) begin
             busy <= 0; done <= 0; sclk_o <= 0; mosi_o <= 0; cs_no <= 1;
-            cnt <= 0; bits <= 0; cpol <= 0; cpha <= 0;
+            cnt <= 0; bits <= 0; cpol <= 0; cpha <= 0; shift <= 0;
+            wb_ack_o <= 0; wb_dat_o <= 0; divisor <= 16'd25;
         end else begin
+            // -------- FSM SPI --------
             if (start && !busy) begin
                 busy   <= 1'b1; done <= 1'b0;
                 bits   <= 4'd8; cnt <= divisor;
@@ -44,26 +48,17 @@ module spi_master (
                 if (cnt == 0) begin
                     cnt   <= divisor;
                     sclk_o <= ~sclk_o;
-                    // sample / shift sur les fronts selon CPHA
                     if (sclk_o == cpol) begin
-                        // front actif : sample MISO
                         shift <= {shift[6:0], miso_i};
                     end else begin
-                        // front inactif : shift suivant
                         if (bits == 0) begin busy <= 1'b0; done <= 1'b1; end
                         else bits <= bits - 1'b1;
                         mosi_o <= shift[7];
                     end
                 end else cnt <= cnt - 1'b1;
             end
-        end
-    end
 
-    // WB
-    always @(posedge clk_i) begin
-        if (rst_i) begin
-            wb_ack_o <= 0;
-        end else begin
+            // -------- Wishbone slave --------
             wb_ack_o <= 0;
             if (wb_cyc_i && wb_stb_i && !wb_ack_o) begin
                 wb_ack_o <= 1'b1;

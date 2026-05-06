@@ -25,23 +25,30 @@ module timer (
     reg [31:0] count, compare, wdt_cnt;
     reg [1:0]  ctrl;
 
+    // Tout regroupé dans un seul always : évite les drivers multiples sur
+    // compare / ctrl / wdt_cnt (que l'on écrit à la fois en reset et via WB).
     always @(posedge clk_i) begin
         if (rst_i) begin
-            count <= 0; compare <= 32'hFFFF_FFFF; ctrl <= 0;
-            wdt_cnt <= 32'h0010_0000; irq_o <= 0; wdt_reset_o <= 0;
+            count       <= 0;
+            compare     <= 32'hFFFF_FFFF;
+            ctrl        <= 0;
+            wdt_cnt     <= 32'h0010_0000;
+            irq_o       <= 0;
+            wdt_reset_o <= 0;
+            wb_ack_o    <= 0;
+            wb_dat_o    <= 0;
         end else begin
+            // Compteur free-running et IRQ
             count <= count + 1'b1;
             irq_o <= ctrl[0] && (count == compare);
+
+            // Watchdog
             if (ctrl[1]) begin
                 if (wdt_cnt == 0) wdt_reset_o <= 1'b1;
                 else              wdt_cnt <= wdt_cnt - 1'b1;
             end
-        end
-    end
 
-    always @(posedge clk_i) begin
-        if (rst_i) wb_ack_o <= 0;
-        else begin
+            // Wishbone slave
             wb_ack_o <= 0;
             if (wb_cyc_i && wb_stb_i && !wb_ack_o) begin
                 wb_ack_o <= 1'b1;

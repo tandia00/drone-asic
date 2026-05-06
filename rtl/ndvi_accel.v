@@ -113,12 +113,13 @@ module ndvi_accel (
                 end
                 S_DIV: begin
                     // restoring division 1 bit/cycle : 16 cycles → 8 bits utiles
-                    rem = {rem[15:0], num_abs[15]};
+                    // rem_shifted = (rem << 1) | num_abs[MSB]  (calcul comb)
                     num_abs <= num_abs << 1;
-                    if (rem >= {1'b0, den}) begin
-                        rem  = rem - {1'b0, den};
+                    if ({rem[15:0], num_abs[15]} >= {1'b0, den}) begin
+                        rem  <= {rem[15:0], num_abs[15]} - {1'b0, den};
                         quot <= {quot[6:0], 1'b1};
                     end else begin
+                        rem  <= {rem[15:0], num_abs[15]};
                         quot <= {quot[6:0], 1'b0};
                     end
                     if (div_bit == 0) state <= S_PACK;

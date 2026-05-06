@@ -42,11 +42,16 @@ module i2c_master (
 
     localparam S_IDLE=0, S_START=1, S_BIT=2, S_ACK=3, S_STOP=4, S_DONE=5;
 
+    // Tout fusionné dans un seul always pour éviter drivers multiples sur
+    // data_r / cmd_valid (FSM + WB).
     always @(posedge clk_i) begin
         if (rst_i) begin
             state <= S_IDLE; busy <= 0; done <= 0;
             scl_oe <= 0; sda_oe <= 0; cnt <= 0; bit_cnt <= 0;
-            cmd_valid <= 0;
+            cmd_valid <= 0; data_r <= 0; ack_recv <= 0;
+            cmd_start <= 0; cmd_stop <= 0; cmd_read <= 0;
+            cmd_write <= 0; cmd_ack <= 0;
+            wb_ack_o <= 0; wb_dat_o <= 0; divisor <= 16'd125;
         end else begin
             if (cnt != 0) cnt <= cnt - 1'b1;
             case (state)
@@ -103,13 +108,8 @@ module i2c_master (
                     busy <= 0; done <= 1'b1; state <= S_IDLE;
                 end
             endcase
-        end
-    end
 
-    // WB
-    always @(posedge clk_i) begin
-        if (rst_i) begin wb_ack_o <= 0; end
-        else begin
+            // -------- Wishbone slave (inline, même always) --------
             wb_ack_o <= 0;
             if (wb_cyc_i && wb_stb_i && !wb_ack_o) begin
                 wb_ack_o <= 1'b1;

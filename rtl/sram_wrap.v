@@ -1,10 +1,17 @@
 // -----------------------------------------------------------------------------
-// SAHEL-1 — Wrapper SRAM 32 KB (8 K × 32 b). En simulation, modèle behavioral.
-// En synthèse OpenLane, remplacé par macros sky130_sram_2kbyte_1rw1r_32x512_8.
+// SAHEL-1 — Wrapper SRAM. Modèle behavioral synthétisé en flip-flops par
+// défaut (utile pour bring-up OpenLane rapide).
+//
+// Pour la production : remplacer le bloc 'reg mem' par une instance de macro
+// hard SKY130 (sky130_sram_2kbyte_1rw1r_32x512_8) -- ce qui implique d'ajouter
+// le LEF/GDS du macro à la config OpenLane et une hiérarchie spécifique.
+//
+// Paramètre WORDS : nombre de mots 32-bit. Defaults à 256 (1 KB) pour le
+// bring-up. Mettre 8192 (32 KB) pour la version finale avec macro hard.
 // -----------------------------------------------------------------------------
 `default_nettype none
 
-module sram_wrap (
+module sram_wrap #(parameter WORDS = 256) (
     input  wire        clk_i,
     input  wire        rst_i,
     input  wire [31:0] wb_adr_i,
@@ -16,9 +23,9 @@ module sram_wrap (
     input  wire        wb_cyc_i,
     output reg         wb_ack_o
 );
-    // 32 KB = 8192 mots de 32 bits → addr[14:2]
-    reg [31:0] mem [0:8191];
-    wire [12:0] idx = wb_adr_i[14:2];
+    localparam ADDR_W = $clog2(WORDS);
+    reg  [31:0]        mem [0:WORDS-1];
+    wire [ADDR_W-1:0]  idx = wb_adr_i[ADDR_W+1:2];
 
     always @(posedge clk_i) begin
         if (rst_i) wb_ack_o <= 0;

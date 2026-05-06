@@ -87,16 +87,28 @@ lint:
 # -----------------------------------------------------------------------------
 # OpenLane — synthèse + place&route → GDSII
 # -----------------------------------------------------------------------------
+OPENLANE_IMAGE ?= ghcr.io/the-openroad-project/openlane:ff5509f65b17bfa4068d5336495ab1718987ff69-arm64v8
+PDK_ROOT       ?= $(HOME)/.volare
+
 harden:
 	@if [ ! -d "$(OPENLANE_DIR)" ]; then \
 	  echo "ERREUR : OpenLane non trouvé à $(OPENLANE_DIR)"; \
 	  echo "Cloner : git clone https://github.com/The-OpenROAD-Project/OpenLane $(OPENLANE_DIR)"; \
 	  exit 1; \
 	fi
-	cd $(OPENLANE_DIR) && \
-	  make mount DESIGN_DIR=$(CURDIR)/openlane/$(TOP) \
-	             RUN_TAG=sahel1 \
-	             docker_command="flow.tcl -design $(CURDIR)/openlane/$(TOP) -run_path $(CURDIR)/runs -tag sahel1"
+	mkdir -p $(CURDIR)/runs
+	docker run --rm \
+	  -v $(OPENLANE_DIR):/openlane \
+	  -v $(OPENLANE_DIR)/designs:/openlane/install \
+	  -v $(HOME):$(HOME) \
+	  -v $(PDK_ROOT):$(PDK_ROOT) \
+	  -e PDK_ROOT=$(PDK_ROOT) \
+	  -e PDK=sky130A \
+	  -e PWD=/openlane \
+	  -w /openlane \
+	  --user $(shell id -u):$(shell id -g) \
+	  $(OPENLANE_IMAGE) \
+	  flow.tcl -design $(CURDIR)/openlane/$(TOP) -run_path $(CURDIR)/runs -tag sahel1
 
 harden-wrapper:
 	cd $(OPENLANE_DIR) && \
